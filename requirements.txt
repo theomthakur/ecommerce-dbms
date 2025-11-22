@@ -1,0 +1,12 @@
+pandas>=1.3.0
+SQLAlchemy>=1.4
+python-dateutil>=2.8.0
+tqdm
+pytest
+plotly
+streamlit
+psycopg[binary]
+psycopg2-binary
+
+# Optional: include both psycopg (v3) and psycopg2-binary so CI/environments can exercise either driver
+
