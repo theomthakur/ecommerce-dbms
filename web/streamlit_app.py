@@ -236,6 +236,34 @@ def load_returns_df():
 
 
 @st.cache_data
+def load_sales_by_location(category='All', region='All', start=None, end=None):
+    """Load sales aggregated by customer location (city, state, country)."""
+    engine = _get_engine()
+    where_clauses = []
+    if category and category != 'All':
+        where_clauses.append(f"p.category = '{category.replace("'","''")}'")  
+    if region and region != 'All':
+        where_clauses.append(f"r.region = '{region.replace("'","''")}'")  
+    if start is not None and end is not None:
+        start_key = int(pd.to_datetime(start).strftime('%Y%m%d'))
+        end_key = int(pd.to_datetime(end).strftime('%Y%m%d'))
+        where_clauses.append(f"d.date_key BETWEEN {start_key} AND {end_key}")
+    where_sql = (' AND '.join(where_clauses)) if where_clauses else '1=1'
+    q = f"""
+    SELECT c.city, c.state, c.country, COALESCE(SUM(f.sales),0) AS total_sales, COUNT(DISTINCT f.order_id) AS orders
+    FROM fact_sales f
+    LEFT JOIN dim_customer c ON f.customer_key = c.customer_key
+    LEFT JOIN dim_product p ON f.product_key = p.product_key
+    LEFT JOIN dim_region r ON f.region_key = r.region_key
+    LEFT JOIN dim_date d ON f.date_key = d.date_key
+    WHERE {where_sql} AND c.city IS NOT NULL
+    GROUP BY c.city, c.state, c.country
+    ORDER BY total_sales DESC
+    """
+    return pd.read_sql_query(q, engine)
+
+
+@st.cache_data
 def load_returns_rate_by_category(start=None, end=None):
     # Uses DW fact_sales and dim_product to compute orders by category and matches returned order ids from CSV
     engine = _get_engine()
@@ -378,3 +406,32 @@ if not df_cust.empty:
     st.plotly_chart(fig_cust, width='stretch')
 else:
     st.write('No customer data available')
+
+st.header('Geographic Sales Distribution')
+df_geo = load_sales_by_location(category=sel_category, region=sel_region, start=sel_date[0], end=sel_date[1])
+if not df_geo.empty and len(df_geo) > 0:
+    # Create location label for hover
+    df_geo['location'] = df_geo['city'] + ', ' + df_geo['state'].fillna('') + ', ' + df_geo['country']
+    df_geo['location'] = df_geo['location'].str.replace(', ,', ',')
+    
+    # Use scatter_geo for a geographic map
+    fig_map = px.scatter_geo(
+        df_geo,
+        locations='country',
+        locationmode='country names',
+        size='total_sales',
+        hover_name='location',
+        hover_data={'total_sales': ':,.2f', 'orders': True, 'country': False},
+        title='Sales by Location',
+        color='total_sales',
+        color_continuous_scale='Viridis'
+    )
+    fig_map.update_layout(geo=dict(showframe=False, showcoastlines=True, projection_type='natural earth'))
+    st.plotly_chart(fig_map, width='stretch')
+    
+    # Show top cities table
+    st.subheader('Top Cities by Sales')
+    top_cities = df_geo.nlargest(10, 'total_sales')[['location', 'total_sales', 'orders']]
+    st.dataframe(top_cities.reset_index(drop=True))
+else:
+    st.write('No geographic data available')
