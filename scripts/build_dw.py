@@ -10,7 +10,7 @@ import pandas as pd
 from sqlalchemy import text
 import sys
 from pathlib import Path as _Path
-# Ensure repo root is on sys.path so `import scripts.*` works when running the script directly
+
 _ROOT = _Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
