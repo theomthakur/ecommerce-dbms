@@ -1,0 +1,40 @@
+ecommerce:
+  outputs:
+    postgres:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      user: "{{ env_var('DBT_USER', 'postgres') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'postgres') }}"
+      port: "{{ env_var('DBT_PORT', 5432) }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'ecommerce_dw') }}"
+      schema: public
+      threads: 4
+      keepalives_idle: 0
+      timeout_seconds: 300
+
+    bigquery:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('BIGQUERY_DATASET', 'ecommerce_dw') }}"
+      threads: 4
+      timeout_seconds: 300
+      keyfile: "{{ env_var('GCP_CREDENTIALS_PATH', '/path/to/service-account-key.json') }}"
+      location: US
+      priority: interactive
+      retries: 1
+
+    redshift:
+      type: redshift
+      host: "{{ env_var('REDSHIFT_HOST') }}"
+      user: "{{ env_var('REDSHIFT_USER') }}"
+      password: "{{ env_var('REDSHIFT_PASSWORD') }}"
+      port: "{{ env_var('REDSHIFT_PORT', 5439) }}"
+      dbname: "{{ env_var('REDSHIFT_DBNAME', 'ecommerce_dw') }}"
+      schema: "{{ env_var('REDSHIFT_SCHEMA', 'public') }}"
+      threads: 4
+      keepalives_idle: 0
+      search_path: ['public']
+      ra3_iamauth: false
+      
+  target: postgres

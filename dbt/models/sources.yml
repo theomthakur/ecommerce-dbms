@@ -1,0 +1,103 @@
+version: 2
+
+sources:
+  - name: ecommerce
+    description: 'E-commerce source system (OLTP)'
+    database: postgres
+    schema: public
+    tables:
+      - name: customers
+        description: 'Customer master data'
+        columns:
+          - name: customer_id
+            description: 'Unique customer identifier'
+            tests:
+              - unique
+              - not_null
+          - name: customer_name
+            description: 'Customer full name'
+          - name: segment
+            description: 'Customer segment (Consumer, Corporate, Home Office)'
+          - name: city
+            description: 'City'
+          - name: state
+            description: 'State'
+          - name: country
+            description: 'Country'
+          - name: region
+            description: 'Region'
+
+      - name: products
+        description: 'Product master data'
+        columns:
+          - name: product_id
+            description: 'Unique product identifier'
+            tests:
+              - unique
+              - not_null
+          - name: product_name
+            description: 'Product name'
+          - name: category
+            description: 'Product category'
+          - name: sub_category
+            description: 'Product sub-category'
+
+      - name: orders
+        description: 'Order header data'
+        columns:
+          - name: order_id
+            description: 'Unique order identifier'
+            tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: 'Foreign key to customers'
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'customers')
+                  field: customer_id
+          - name: order_date
+            description: 'Date order was placed'
+            tests:
+              - not_null
+
+      - name: order_items
+        description: 'Order line items'
+        columns:
+          - name: order_id
+            description: 'Foreign key to orders'
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'orders')
+                  field: order_id
+          - name: product_id
+            description: 'Foreign key to products'
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'products')
+                  field: product_id
+          - name: quantity
+            description: 'Quantity ordered'
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+      - name: returns
+        description: 'Product returns'
+        columns:
+          - name: return_id
+            description: 'Unique return identifier'
+            tests:
+              - unique
+              - not_null
+          - name: order_id
+            description: 'Foreign key to orders'
+            tests:
+              - not_null
+              - relationships:
+                  to: source('ecommerce', 'orders')
+                  field: order_id

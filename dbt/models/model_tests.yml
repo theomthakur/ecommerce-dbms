@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: 'Staging layer for customers'
+    columns:
+      - name: customer_id
+        description: 'Customer primary key'
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_orders
+    description: 'Staging layer for orders'
+    columns:
+      - name: order_id
+        description: 'Order primary key'
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: 'Customer foreign key'
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+  - name: fact_customer_analytics
+    description: 'Customer-level analytics fact table'
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: total_sales
+        description: 'Customer lifetime value'
+      - name: customer_tier
+        description: 'Customer classification (VIP, Regular, At-Risk)'
+        tests:
+          - accepted_values:
+              values: ['VIP', 'Regular', 'At-Risk']
+
+  - name: fact_order_analytics
+    description: 'Order-level analytics fact table'
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_revenue_analysis
+    description: 'Revenue metrics by month, region, and market'
+    columns:
+      - name: revenue_month
+        description: 'Month for revenue metrics'
+      - name: gross_revenue
+        description: 'Total gross revenue'
+        tests:
+          - not_null
+
+  - name: fct_product_performance
+    description: 'Product performance metrics'
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
